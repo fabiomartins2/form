@@ -1,17 +1,30 @@
-stages:
- - build
- - deploy
+version: "3"
 
-build-job:
-  stage: build
-  script:
-  - docker build fabiom357/my-webcounter .
-  - docker login -u $USERNAME -p $PASSWORD
-  - docker push
+volumes:
+  redis-data:
 
-deploy-job:
-  stage: deploy
-  script:
-    - docker stack deploy - docker-compose-yml app
-  needs:
-    - build-job
+services:
+  redis:
+    image: "redis:alpine"
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data 
+
+  webcounter:
+    image: "fabiom357/my-webcounter"
+    ports:
+      - 80:5000
+    environment:
+      - REDIS_URL=redis
+    depends_on:
+      - redis  
+    deploy:
+      mode: replicated
+      replicas: 3
+      resources:
+        limits:
+         cpus: "0.2"
+         memory: 128M
+      restart_policy:
+        condition: on-failure
