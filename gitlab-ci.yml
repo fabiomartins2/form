@@ -1,0 +1,35 @@
+stages:
+- tests
+- build
+- deploy
+
+test-job:
+  stage: tests
+  script:
+  - pip install -r requirements.txt
+  - pip install -r requirements-tests.txt
+  - python3 -m pytest --junitxml=junit-results.xml tests/
+  tags:
+  - docker-runner
+
+build-job:
+  stage: build
+  script:
+  - docker build fabiom357/my-webcounter .
+  - docker login -u $USERNAME -p $PASSWORD
+  - docker push fabiom357/my-webcounter
+  tags:
+  - shell-runner
+  needs:
+  - test-job
+  only:
+  - main
+
+deploy-job:
+  stage: deploy
+  script:
+    - docker stack deploy - docker-compose-yml app
+  tags:
+  - shell-runner
+  only:
+    - tags
