@@ -1,0 +1,17 @@
+stages:
+ - build
+ - deploy
+
+build-job:
+  stage: build
+  script:
+  - docker build fabiom357/my-webcounter .
+  - docker login -u $USERNAME -p $PASSWORD
+  - docker push
+
+deploy-job:
+  stage: deploy
+  script:
+    - docker stack deploy - docker-compose-yml app
+  needs:
+    - build-job
